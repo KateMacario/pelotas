@@ -1,0 +1,193 @@
+ArrayList<Ball> myBalls;
+
+void setup()
+{
+  size(500, 500);
+  colorMode(HSB);
+  background(255);
+  myBalls = new ArrayList();
+  
+  for(int i = 0; i < 16; i++)
+  {
+    int ballDiam = int(random(20, 60));
+    int matiz = int(random(0,255));
+    PVector ballPos = new PVector(random(ballDiam, width - ballDiam),
+                                  random(ballDiam, height - ballDiam));    
+    myBalls.add(new Ball(ballPos, ballDiam, matiz));  
+  }
+}
+
+void draw()
+ {
+  background(255);
+  for(int i=0; i<myBalls.size(); i++)
+  {
+    myBalls.get(i).display();
+  }
+}
+
+void mousePressed()
+{
+  for(int i=0; i<myBalls.size(); i++)
+  {
+    myBalls.get(i).checkPressed();
+  }
+}
+
+void mouseReleased()
+{
+  for(int i=0; i<myBalls.size(); i++)
+  {
+    myBalls.get(i).checkReleased();
+  }
+}
+
+class Ball
+{ 
+  PVector ballPos;
+  PVector ballSpeed;
+  int ballDiam;
+  Boolean isDragging;
+  int matiz;
+  float resist;
+  int timer;
+  int motionTime;
+  
+  Ball(PVector tempBallPos, int tempBallDiame, int tempMatiz)
+  {
+    ballPos = tempBallPos;
+    ballSpeed = new PVector(0, 0);
+    ballDiam = tempBallDiame;
+    isDragging = false;
+    matiz = tempMatiz;
+    resist = map(ballDiam, 20, 60, 0.98, 0.8);
+    timer = millis();
+    motionTime = 300;
+  
+    back();  
+  }
+  
+  
+  void display()
+  {
+    
+    quiz();
+    colis();
+    
+    ballPos.x += ballSpeed.x;
+    ballPos.y += ballSpeed.y;
+    
+    ballSpeed.x *= resist;
+    ballSpeed.y *= resist;      
+      
+   
+    if(isDragging)
+    {
+      stroke(0);
+      strokeWeight(2);
+      line(ballPos.x, ballPos.y, mouseX, mouseY);
+    }
+    
+    strokeWeight(2);
+    fill(matiz, 255, 255);
+    ellipse(ballPos.x, ballPos.y, ballDiam, ballDiam);  
+  }
+
+  
+  void back()
+  {
+    for(int i=0; i<myBalls.size(); i++)
+    {
+      Ball tempBall = myBalls.get(i);
+      
+      
+      if(tempBall != this)
+      {
+        float distancia = dist(ballPos.x, ballPos.y,
+                               tempBall.ballPos.x, tempBall.ballPos.y);
+                                      
+        if(distancia <= (ballDiam + tempBall.ballDiam)/2)
+        {
+          PVector direc = new PVector(ballPos.x - tempBall.ballPos.x,
+                                        ballPos.y - tempBall.ballPos.y);
+          direc.normalize();
+          ballPos.x += direc.x * distancia * 1.1;
+          ballPos.y += direc.y * distancia * 1.1;
+        }  
+      }
+    }  
+  }
+
+  void colis()
+  {
+    for(int i=0; i<myBalls.size(); i++)
+    {
+      Ball tempBall = myBalls.get(i);
+      if(tempBall != this)
+      {
+        float distancia = dist(ballPos.x, ballPos.y,
+                               tempBall.ballPos.x, tempBall.ballPos.y);
+        if(distancia <= (ballDiam + tempBall.ballDiam)/2)
+        {
+          tempBall.ballSpeed.x += ballSpeed.x;
+          tempBall.ballSpeed.y += ballSpeed.y;
+
+          float angle = atan2(tempBall.ballPos.y - ballPos.y, tempBall.ballPos.x - ballPos.x);
+          ballPos.x = tempBall.ballPos.x - cos(angle) * (tempBall.ballDiam + ballDiam)/2;
+          ballPos.y = tempBall.ballPos.y - sin(angle) * (tempBall.ballDiam + ballDiam)/2;
+          
+          ballSpeed.x *= -1;
+          ballSpeed.y *= -1;
+
+          if(timer + 2*motionTime < millis())
+          {
+            timer = millis() + motionTime;
+          }
+        }  
+      }
+    }
+  }
+
+  void quiz()
+  {
+    if(ballPos.x - ballDiam/2 < 0)
+    {
+      ballPos.x = ballDiam/2;
+      ballSpeed.x *= -1;
+    }  
+    if(ballPos.x + ballDiam/2 > width)
+    {
+      ballPos.x = width - ballDiam/2;
+      ballSpeed.x *= -1;
+    }
+    if(ballPos.y  - ballDiam/2 < 0)
+    {
+      ballPos.y = ballDiam/2;
+      ballSpeed.y *= -1;
+    }
+    if(ballPos.y + ballDiam/2 > height)
+    {
+      ballPos.y = height - ballDiam/2;
+      ballSpeed.y *= -1;
+    }  
+  }
+
+  void checkPressed()
+  {
+    float distancia = dist(ballPos.x, ballPos.y, mouseX, mouseY);
+    if(distancia < ballDiam/2)
+    {
+      isDragging = true;
+    }  
+  }
+
+  void checkReleased()
+  {
+    if(isDragging)
+    {
+      ballSpeed.x = (ballPos.x - mouseX)/10;
+      ballSpeed.y = (ballPos.y - mouseY)/10;  
+    }
+    isDragging = false;  
+  }  
+}
